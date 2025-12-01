@@ -320,15 +320,19 @@ El uso de COUNT puede fallar si hay duplicados o si la integridad referencial no
         visibleTables: ['PACIENTES', 'CLINICAS', 'PROVINCIAS', 'DISPENSAS'],
         initialCode: `-- Escribe tu consulta aquí
 SELECT * FROM CLINICAS`,
-        solution: `SELECT DISTINCT CL.ClinicaDesc
-FROM CLINICAS CL
+        solution: `SELECT C.ClinicaDesc
+FROM CLINICAS C
 WHERE NOT EXISTS (
-    SELECT * FROM PROVINCIAS PR
-    WHERE PR.ProvinciaDesc IN ('Salta', 'CABA')
-      AND NOT EXISTS (
-        SELECT * FROM DISPENSAS D
-        INNER JOIN PACIENTES P ON D.PacienteID = P.PacienteID
-        WHERE D.ClinicaID = CL.ClinicaID AND P.ProvinciaID = PR.ProvinciaID
+    -- Nivel 1: Recorremos el Universo de Provincias
+    SELECT 1
+    FROM PROVINCIAS P
+    WHERE NOT EXISTS (
+        -- Nivel 2: Buscamos si existe el "vínculo" (Atención a esa provincia)
+        SELECT 1
+        FROM DISPENSAS D
+        JOIN PACIENTES PA ON D.PacienteID = PA.PacienteID
+        WHERE D.ClinicaID = C.ClinicaID    -- Coincide con la Clínica actual
+          AND PA.ProvinciaID = P.ProvinciaID -- Coincide con la Provincia actual
     )
 )`,
         solutionExplanation: `
@@ -337,15 +341,19 @@ WHERE NOT EXISTS (
 "No existe una provincia (de las especificadas) para la cual no exista una dispensa en esa clínica de un paciente de esa provincia."
 
 \`\`\`sql
-SELECT DISTINCT CL.ClinicaDesc
-FROM CLINICAS CL
+SELECT C.ClinicaDesc
+FROM CLINICAS C
 WHERE NOT EXISTS (
-    SELECT * FROM PROVINCIAS PR
-    WHERE PR.ProvinciaDesc IN ('Salta', 'CABA')
-      AND NOT EXISTS (
-        SELECT * FROM DISPENSAS D
-        INNER JOIN PACIENTES P ON D.PacienteID = P.PacienteID
-        WHERE D.ClinicaID = CL.ClinicaID AND P.ProvinciaID = PR.ProvinciaID
+    -- Nivel 1: Recorremos el Universo de Provincias
+    SELECT 1
+    FROM PROVINCIAS P
+    WHERE NOT EXISTS (
+        -- Nivel 2: Buscamos si existe el "vínculo" (Atención a esa provincia)
+        SELECT 1
+        FROM DISPENSAS D
+        JOIN PACIENTES PA ON D.PacienteID = PA.PacienteID
+        WHERE D.ClinicaID = C.ClinicaID    -- Coincide con la Clínica actual
+          AND PA.ProvinciaID = P.ProvinciaID -- Coincide con la Provincia actual
     )
 )
 \`\`\`
@@ -355,15 +363,17 @@ WHERE NOT EXISTS (
         validate: (userQuery) => {
             try {
                 const canonicalQuery = `
-                    SELECT DISTINCT CL.ClinicaDesc
-                    FROM CLINICAS CL
+                    SELECT C.ClinicaDesc
+                    FROM CLINICAS C
                     WHERE NOT EXISTS (
-                        SELECT * FROM PROVINCIAS PR
-                        WHERE PR.ProvinciaDesc IN ('Salta', 'CABA')
-                          AND NOT EXISTS (
-                            SELECT * FROM DISPENSAS D
-                            INNER JOIN PACIENTES P ON D.PacienteID = P.PacienteID
-                            WHERE D.ClinicaID = CL.ClinicaID AND P.ProvinciaID = PR.ProvinciaID
+                        SELECT 1
+                        FROM PROVINCIAS P
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM DISPENSAS D
+                            JOIN PACIENTES PA ON D.PacienteID = PA.PacienteID
+                            WHERE D.ClinicaID = C.ClinicaID
+                              AND PA.ProvinciaID = P.ProvinciaID
                         )
                     )
                 `;
