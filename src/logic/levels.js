@@ -475,9 +475,9 @@ WHERE NOT EXISTS (
         initialCode: `-- Escribe tu expresión de álgebra relacional aquí
 -- Usa los botones para insertar símbolos
 `,
-        expectedAlgebra: "X1=π[PacienteID](DISPENSAS);X2=π[PacienteID]((X1×MONODROGAS)−π[PacienteID,MonodrogaDesc](DISPENSAS⨝MEDICAMENTOS));R=X1−X2",
+        expectedAlgebra: "X1=π[PacienteID](DISPENSAS);X2=π[PacienteID]((X1×π[MedMonodroga](MEDICAMENTOS))−π[PacienteID,MedMonodroga](DISPENSAS⨝MEDICAMENTOS));R=X1−X2",
         solution: `X1 = π[PacienteID](DISPENSAS)
-X2 = π[PacienteID]((X1 × MONODROGAS) − π[PacienteID,MonodrogaDesc](DISPENSAS ⨝ MEDICAMENTOS))
+X2 = π[PacienteID]((X1 × π[MedMonodroga](MEDICAMENTOS)) − π[PacienteID,MedMonodroga](DISPENSAS ⨝ MEDICAMENTOS))
 R = X1 − X2`,
         solutionExplanation: `
 **Método de los 3 Pasos (División):**
@@ -494,7 +494,7 @@ R = X1 − X2`,
 
 \`\`\`
 X1 = π[PacienteID](DISPENSAS)
-X2 = π[PacienteID]((X1 × MONODROGAS) − π[PacienteID,MonodrogaDesc](DISPENSAS ⨝ MEDICAMENTOS))
+X2 = π[PacienteID]((X1 × π[MedMonodroga](MEDICAMENTOS)) − π[PacienteID,MedMonodroga](DISPENSAS ⨝ MEDICAMENTOS))
 R = X1 − X2
 \`\`\`
         `,
@@ -541,10 +541,10 @@ R = X1 − X2
         initialCode: `-- Escribe tu expresión de álgebra relacional aquí
 -- Usa los botones para insertar símbolos
 `,
-        expectedAlgebra: "X1=π[ClinicaID](DISPENSAS⨝PACIENTES);X2=σ[ProvinciaDescIN('Salta','CABA')](PROVINCIAS);X3=π[ClinicaID,ProvinciaID](X1×X2);X4=π[ClinicaID,ProvinciaID](DISPENSAS⨝PACIENTES);X5=X3−X4;R=X1−π[ClinicaID](X5)",
-        solution: `X1 = π[ClinicaID](DISPENSAS ⨝ PACIENTES)
-X2 = σ[ProvinciaDesc IN ('Salta','CABA')](PROVINCIAS)
-X3 = π[ClinicaID,ProvinciaID](X1 × X2)
+        expectedAlgebra: "X1=π[ClinicaID](DISPENSAS);X2=π[ProvinciaID](PROVINCIAS);X3=X1×X2;X4=π[ClinicaID,ProvinciaID](DISPENSAS⨝PACIENTES);X5=X3−X4;R=X1−π[ClinicaID](X5)",
+        solution: `X1 = π[ClinicaID](DISPENSAS)
+X2 = π[ProvinciaID](PROVINCIAS)
+X3 = X1 × X2
 X4 = π[ClinicaID,ProvinciaID](DISPENSAS ⨝ PACIENTES)
 X5 = X3 − X4
 R = X1 − π[ClinicaID](X5)`,
@@ -564,9 +564,9 @@ R = X1 − π[ClinicaID](X5)`,
    $R = X_1 - \\pi_{ClinicaID}(X_3)$
 
 \`\`\`
-X1 = π[ClinicaID](DISPENSAS ⨝ PACIENTES)
-X2 = σ[ProvinciaDesc IN ('Salta','CABA')](PROVINCIAS)
-X3 = π[ClinicaID,ProvinciaID](X1 × X2)
+X1 = π[ClinicaID](DISPENSAS)
+X2 = π[ProvinciaID](PROVINCIAS)
+X3 = X1 × X2
 X4 = π[ClinicaID,ProvinciaID](DISPENSAS ⨝ PACIENTES)
 X5 = X3 − X4
 R = X1 − π[ClinicaID](X5)
@@ -611,10 +611,12 @@ R = X1 − π[ClinicaID](X5)
         initialCode: `-- Escribe tu expresión de álgebra relacional aquí
 -- Usa los botones para insertar símbolos
 `,
-        expectedAlgebra: "T1=ρ[Titular←PACIENTES](PACIENTES);T2=σ[Fecha>='2023-09-01'ANDFecha<='2023-09-30'](DISPENSAS);R=π[P.Nombre,ISNULL(T.Nombre,''),C.ClinicaDesc](PACIENTESP⟕T1TONP.TitularID=T.PacienteID⨝T2⨝CLINICASC)",
-        solution: `T1 = ρ[Titular ← PACIENTES](PACIENTES)
-T2 = σ[Fecha >= '2023-09-01' AND Fecha <= '2023-09-30'](DISPENSAS)
-R = π[P.Nombre, ISNULL(T.Nombre,''), C.ClinicaDesc](PACIENTES P ⟕ T1 T ON P.TitularID = T.PacienteID ⨝ T2 ⨝ CLINICAS C)`,
+        expectedAlgebra: "X1=σFecha>='2023-09-01'^Fecha<='2023-09-30'(DISPENSAS);X2=X1⨝CLINICAS⨝PACIENTES;X3=ρTITULARES(T_ID,T_NOMBRE,T_APELLIDO,T_PROVINCIAID)(PACIENTES);X4=X2⟕[TitularID=T_ID]X3;R=π[Nombre,Apellido,T_NOMBRE,T_APELLIDO,ClinicaDesc](X4)",
+        solution: `X1 = σFecha>='2023-09-01'^Fecha<='2023-09-30'(DISPENSAS)
+X2 = X1 ⨝ CLINICAS ⨝ PACIENTES
+X3 = ρTITULARES(T_ID,T_NOMBRE,T_APELLIDO,T_PROVINCIAID)(PACIENTES)
+X4 = X2 ⟕[TitularID=T_ID] X3
+R = π[Nombre, Apellido, T_NOMBRE, T_APELLIDO, ClinicaDesc](X4)`,
         solutionExplanation: `
 **Consulta Compleja - Elementos Clave:**
 
@@ -632,9 +634,11 @@ R = π[P.Nombre, ISNULL(T.Nombre,''), C.ClinicaDesc](PACIENTES P ⟕ T1 T ON P.T
 $\\pi_{P.Nombre, ISNULL(T.Nombre,''), C.ClinicaDesc}(Pacientes\\ P \\;⟕\\; Titular\\ T \\;⨝\\; Dispensas\\_Sep \\;⨝\\; Clinicas\\ C)$
 
 \`\`\`
-T1 = ρ[Titular ← PACIENTES](PACIENTES)
-T2 = σ[Fecha >= '2023-09-01' AND Fecha <= '2023-09-30'](DISPENSAS)
-R = π[P.Nombre, ISNULL(T.Nombre,''), C.ClinicaDesc](PACIENTES P ⟕ T1 T ON P.TitularID = T.PacienteID ⨝ T2 ⨝ CLINICAS C)
+X1 = σFecha>='2023-09-01'^Fecha<='2023-09-30'(DISPENSAS)
+X2 = X1 ⨝ CLINICAS ⨝ PACIENTES
+X3 = ρTITULARES(T_ID,T_NOMBRE,T_APELLIDO,T_PROVINCIAID)(PACIENTES)
+X4 = X2 ⟕[TitularID=T_ID] X3
+R = π[Nombre, Apellido, T_NOMBRE, T_APELLIDO, ClinicaDesc](X4)
 \`\`\`
         `,
         validate: (userExpression) => {
